@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+  labels:
+    app: recruiter-cms
+  name: recruiter-cms
+  namespace: dev
+spec:
+  ports:
+    - name: recruiter-cms
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: recruiter-cms
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+  labels:
+    app: recruiter-cms
+  name: recruiter-cms
+  namespace: dev
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: recruiter-cms
+  strategy:
+    type: RollingUpdate # Should be RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: recruiter-cms
+    spec:
+      containers:
+        - env:
+            - name: SERVICE_HOST
+              value: '0.0.0.0'
+            - name: SERVICE_PORT
+              value: '3000'
+            - name: GOOGLEMAP_API_KEY
+              value: 'AIzaSyDm_uG7jcclLM5QXjScNF8mkYrIhe3IEzw'
+            - name: JWT_SECRET_KEY
+              value: cuongdeptrai
+            - name: JWT_EXPIRATION_TIME
+              value: 7d
+            - name: DB_HOST
+              value: db-postgresql-nyc1-59855-do-user-6507062-0.b.db.ondigitalocean.com
+            - name: DB_PORT
+              value: '25060'
+            - name: DB_USERNAME
+              value: doadmin
+            - name: DB_PASSWORD
+              value: AVNS_vAlPbwQWY4lohBYDjpU
+            - name: DB_DATABASE
+              value: topcv
+            - name: DB_SSL
+              value: 'true'
+            - name: UID_SERVICE_HOST
+              value: https://cvnl.me/uuid/v1
+            - name: ELASTICSEARCH_URL
+              value: https://elastic.kma-news.tech/
+          image: ${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          name: recruiter-cms
+          ports:
+            - containerPort: 3000
+              name: recruiter-cms
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              memory: 1Gi
+            requests:
+              cpu: 400m
+              memory: 500Mi
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 3000
+              httpHeaders:
+                - name: Accept
+                  value: application/json
+            initialDelaySeconds: 50
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 3000
+              httpHeaders:
+                - name: Accept
+                  value: application/json
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 10

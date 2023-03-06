@@ -1,0 +1,41 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: managed-cert
+spec:
+  domains:
+    - recruiter.kma-news.tech
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dev-ingress-auth
+  namespace: dev
+  annotations:
+    ingressClassName: nginx
+    kubernetes.io/ingress.global-static-ip-name: nginx-ip
+    networking.gke.io/managed-certificates: managed-cert
+    kubernetes.io/ingress.class: 'gce'
+  labels:
+    app: recruiter-cms
+spec:
+  # tls:
+  #   - hosts:
+  #       - recruiter.kma-news.tech
+  # secretName: dev-ingress-auth-tls
+  defaultBackend:
+    service:
+      name: recruiter-cms
+      port:
+        number: 3000
+  rules:
+    - host: recruiter.kma-news.tech
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: recruiter-cms
+                port:
+                  number: 3000
